@@ -2,7 +2,7 @@ import Link from "next/link"
 
 import { prisma } from "@/lib/prisma"
 
-export const revalidate = 0
+export const revalidate = 60
 
 type MarketsPageProps = {
   searchParams?: Promise<{
@@ -53,7 +53,7 @@ export default async function MarketsPage({
     await prisma.market.findMany({
       where: {
         reviewStatus: "approved",
-        
+
         ...(status
           ? {
               status,
