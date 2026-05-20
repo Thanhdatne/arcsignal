@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { formatUnits } from "viem"
-import { useAccount, useConnect, useDisconnect, usePublicClient } from "wagmi"
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  usePublicClient,
+} from "wagmi"
 
 import { arcTestnet } from "@/lib/chains"
 
@@ -43,7 +48,9 @@ export function Navbar() {
         address,
       })
 
-      setBalance(Number(formatUnits(rawBalance, 18)).toFixed(4))
+      setBalance(
+        Number(formatUnits(rawBalance, 18)).toFixed(4)
+      )
     }
 
     loadBalance()
@@ -53,7 +60,9 @@ export function Navbar() {
     return () => clearInterval(interval)
   }, [address, publicClient])
 
-  const adminWallet = process.env.NEXT_PUBLIC_ADMIN_WALLET?.toLowerCase()
+  const adminWallet =
+    process.env.NEXT_PUBLIC_ADMIN_WALLET?.toLowerCase()
+
   const isAdmin =
     mounted && address?.toLowerCase() === adminWallet
 
@@ -62,6 +71,7 @@ export function Navbar() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link
           href="/"
+          prefetch
           className="text-4xl font-semibold tracking-tight text-white transition hover:text-emerald-300"
         >
           ArcSignal
@@ -72,9 +82,11 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
+              prefetch
               className="group relative opacity-80 transition hover:opacity-100"
             >
               {link.label}
+
               <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-emerald-300 transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
@@ -82,9 +94,11 @@ export function Navbar() {
           {isAdmin ? (
             <Link
               href="/admin"
+              prefetch
               className="group relative opacity-80 transition hover:opacity-100"
             >
               Admin
+
               <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-emerald-300 transition-all duration-300 group-hover:w-full" />
             </Link>
           ) : null}
@@ -117,8 +131,13 @@ export function Navbar() {
                 {open ? (
                   <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-2xl">
                     <div className="mb-3 rounded-xl bg-black p-3 text-xs text-zinc-500">
-                      <p className="mb-1">Connected wallet</p>
-                      <p className="break-all text-zinc-300">{address}</p>
+                      <p className="mb-1">
+                        Connected wallet
+                      </p>
+
+                      <p className="break-all text-zinc-300">
+                        {address}
+                      </p>
                     </div>
 
                     <button
@@ -136,7 +155,11 @@ export function Navbar() {
             </>
           ) : (
             <button
-              onClick={() => connect({ connector: injectedConnector })}
+              onClick={() =>
+                connect({
+                  connector: injectedConnector,
+                })
+              }
               className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-zinc-200"
             >
               Connect Wallet
