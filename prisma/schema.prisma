@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Market {
+  id                String   @id @default(cuid())
+
+  onchainId         Int?
+
+  title             String
+  description       String
+
+  category          String
+
+  settlement        String
+
+  settlementAsset   String
+
+  accessControl     String
+
+  resolution        String?
+
+  oracleSource      String?
+  evidenceUrl       String?
+
+  winningOutcomeId  String?
+
+  status            String   @default("draft")
+  reviewStatus      String   @default("pending_review")
+
+  volume            String
+  liquidity         String
+
+  disputeEndsAt     DateTime?
+
+  createdAt         DateTime @default(now())
+
+  outcomes          Outcome[]
+
+  trades            Trade[]
+
+  activities        ActivityEvent[]
+}
+
+model Outcome {
+  id            String  @id @default(cuid())
+
+  marketId      String
+
+  onchainId     Int?
+
+  label         String
+
+  probability   Float
+
+  totalShares   Float
+
+  market        Market  @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  trades        Trade[]
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+
+  marketId    String
+  outcomeId   String
+
+  wallet      String
+
+  amount      Float
+
+  shares      Float
+
+  txHash      String?
+  claimedAt DateTime?
+
+  createdAt   DateTime @default(now())
+
+  market      Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  outcome     Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+}
+
+model Treasury {
+  id                  String   @id @default(cuid())
+
+  totalValueLocked    Float
+
+  reserveBalance      Float
+
+  settlementPool      Float
+
+  pendingPayouts      Float
+
+  createdAt           DateTime @default(now())
+}
+
+model ActivityEvent {
+  id            String   @id @default(cuid())
+
+  marketId      String
+
+  type          String
+
+  title         String
+
+  description   String?
+
+  evidenceUrl   String?
+
+  txHash        String?
+
+  createdAt     DateTime @default(now())
+
+  market        Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+}
