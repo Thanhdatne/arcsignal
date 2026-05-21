@@ -14,6 +14,17 @@ import {
 
 import { arcTestnet } from "@/lib/chains"
 
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: {
+        method: string
+        params?: unknown[]
+      }) => Promise<unknown>
+    }
+  }
+}
+
 const links = [
   { href: "/markets", label: "Markets" },
   { href: "/create", label: "Create" },
@@ -47,7 +58,7 @@ export function Navbar() {
         chainId: arcTestnet.id,
       })
     } catch {
-      const ethereum = window.ethereum as any
+      const ethereum = window.ethereum
 
       if (!ethereum) return
 
