@@ -106,5 +106,5 @@ export async function createMarket(
       },
     })
 
-  redirect(`/admin/${market.id}`)
+  redirect(`/create/success?id=${market.id}`)
 }
