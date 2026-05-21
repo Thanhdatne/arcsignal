@@ -5,9 +5,11 @@ import Link from "next/link"
 import { formatUnits } from "viem"
 import {
   useAccount,
+  useChainId,
   useConnect,
   useDisconnect,
   usePublicClient,
+  useSwitchChain,
 } from "wagmi"
 
 import { arcTestnet } from "@/lib/chains"
@@ -27,8 +29,10 @@ export function Navbar() {
   const [balance, setBalance] = useState("0.0000")
 
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
+  const { switchChain } = useSwitchChain()
 
   const publicClient = usePublicClient({
     chainId: arcTestnet.id,
@@ -41,6 +45,15 @@ export function Navbar() {
   }, [])
 
   useEffect(() => {
+    if (!mounted || !isConnected) return
+    if (chainId === arcTestnet.id) return
+
+    switchChain({
+      chainId: arcTestnet.id,
+    })
+  }, [mounted, isConnected, chainId, switchChain])
+
+  useEffect(() => {
     async function loadBalance() {
       if (!address || !publicClient) return
 
@@ -48,9 +61,7 @@ export function Navbar() {
         address,
       })
 
-      setBalance(
-        Number(formatUnits(rawBalance, 18)).toFixed(4)
-      )
+      setBalance(Number(formatUnits(rawBalance, 18)).toFixed(4))
     }
 
     loadBalance()
@@ -107,6 +118,19 @@ export function Navbar() {
             <div className="h-10 w-32 rounded-2xl border border-zinc-800" />
           ) : isConnected ? (
             <>
+              {chainId !== arcTestnet.id ? (
+                <button
+                  onClick={() =>
+                    switchChain({
+                      chainId: arcTestnet.id,
+                    })
+                  }
+                  className="rounded-2xl border border-yellow-300/30 bg-yellow-300/10 px-4 py-2 text-sm text-yellow-300 transition hover:bg-yellow-300 hover:text-black"
+                >
+                  Switch to Arc
+                </button>
+              ) : null}
+
               <a
                 href="https://faucet.circle.com/"
                 target="_blank"
