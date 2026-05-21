@@ -30,9 +30,10 @@ export function Navbar() {
 
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
-  const { connect, connectors } = useConnect()
+
+  const { connectAsync, connectors } = useConnect()
   const { disconnect } = useDisconnect()
-  const { switchChain } = useSwitchChain()
+  const { switchChainAsync } = useSwitchChain()
 
   const publicClient = usePublicClient({
     chainId: arcTestnet.id,
@@ -40,18 +41,46 @@ export function Navbar() {
 
   const injectedConnector = connectors[0]
 
+  async function switchToArc() {
+    try {
+      await switchChainAsync({
+        chainId: arcTestnet.id,
+      })
+    } catch {
+      const ethereum = window.ethereum as any
+
+      if (!ethereum) return
+
+      await ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: `0x${arcTestnet.id.toString(16)}`,
+            chainName: arcTestnet.name,
+            nativeCurrency: arcTestnet.nativeCurrency,
+            rpcUrls: arcTestnet.rpcUrls.default.http,
+            blockExplorerUrls: arcTestnet.blockExplorers?.default
+              ? [arcTestnet.blockExplorers.default.url]
+              : [],
+          },
+        ],
+      })
+    }
+  }
+
+  async function handleConnect() {
+    if (!injectedConnector) return
+
+    await connectAsync({
+      connector: injectedConnector,
+    })
+
+    await switchToArc()
+  }
+
   useEffect(() => {
     setMounted(true)
   }, [])
-
-  useEffect(() => {
-    if (!mounted || !isConnected) return
-    if (chainId === arcTestnet.id) return
-
-    switchChain({
-      chainId: arcTestnet.id,
-    })
-  }, [mounted, isConnected, chainId, switchChain])
 
   useEffect(() => {
     async function loadBalance() {
@@ -97,7 +126,6 @@ export function Navbar() {
               className="group relative opacity-80 transition hover:opacity-100"
             >
               {link.label}
-
               <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-emerald-300 transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
@@ -109,7 +137,6 @@ export function Navbar() {
               className="group relative opacity-80 transition hover:opacity-100"
             >
               Admin
-
               <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-emerald-300 transition-all duration-300 group-hover:w-full" />
             </Link>
           ) : null}
@@ -120,11 +147,7 @@ export function Navbar() {
             <>
               {chainId !== arcTestnet.id ? (
                 <button
-                  onClick={() =>
-                    switchChain({
-                      chainId: arcTestnet.id,
-                    })
-                  }
+                  onClick={switchToArc}
                   className="rounded-2xl border border-yellow-300/30 bg-yellow-300/10 px-4 py-2 text-sm text-yellow-300 transition hover:bg-yellow-300 hover:text-black"
                 >
                   Switch to Arc
@@ -155,10 +178,7 @@ export function Navbar() {
                 {open ? (
                   <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-2xl">
                     <div className="mb-3 rounded-xl bg-black p-3 text-xs text-zinc-500">
-                      <p className="mb-1">
-                        Connected wallet
-                      </p>
-
+                      <p className="mb-1">Connected wallet</p>
                       <p className="break-all text-zinc-300">
                         {address}
                       </p>
@@ -179,11 +199,7 @@ export function Navbar() {
             </>
           ) : (
             <button
-              onClick={() =>
-                connect({
-                  connector: injectedConnector,
-                })
-              }
+              onClick={handleConnect}
               className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-zinc-200"
             >
               Connect Wallet
