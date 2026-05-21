@@ -9,7 +9,6 @@ import {
   useConnect,
   useDisconnect,
   usePublicClient,
-  useSwitchChain,
 } from "wagmi"
 
 import { arcTestnet } from "@/lib/chains"
@@ -25,6 +24,9 @@ declare global {
   }
 }
 
+const ARC_CHAIN_ID = 5042002
+const ARC_CHAIN_ID_HEX = "0x4cf4b2"
+
 const links = [
   { href: "/markets", label: "Markets" },
   { href: "/create", label: "Create" },
@@ -38,70 +40,108 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [balance, setBalance] = useState("0.0000")
+  const [networkPending, setNetworkPending] =
+    useState(false)
 
-  const { address, isConnected } = useAccount()
+  const { address, isConnected } =
+    useAccount()
+
   const chainId = useChainId()
 
-  const { connectAsync, connectors } = useConnect()
-  const { disconnect } = useDisconnect()
-  const { switchChainAsync } = useSwitchChain()
+  const {
+    connectAsync,
+    connectors,
+  } = useConnect()
 
-  const publicClient = usePublicClient({
-    chainId: arcTestnet.id,
-  })
+  const { disconnect } =
+    useDisconnect()
 
-  const injectedConnector = connectors[0]
+  const publicClient =
+    usePublicClient({
+      chainId: arcTestnet.id,
+    })
 
-    async function switchToArc() {
-    const ethereum = window.ethereum
+  const injectedConnector =
+    connectors.find(
+      (connector) =>
+        connector.type ===
+        "injected"
+    ) ?? connectors[0]
+
+  async function switchToArc() {
+    const ethereum =
+      window.ethereum
 
     if (!ethereum) return
 
-    const chainIdHex = `0x${arcTestnet.id.toString(16)}`
+    setNetworkPending(true)
 
     try {
       await ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: chainIdHex }],
+        method:
+          "wallet_switchEthereumChain",
+
+        params: [
+          {
+            chainId:
+              ARC_CHAIN_ID_HEX,
+          },
+        ],
       })
-    } catch (error: any) {
-      if (error?.code === 4902 || error?.message?.includes("Unrecognized")) {
-        await ethereum.request({
-          method: "wallet_addEthereumChain",
-          params: [
-            {
-              chainId: chainIdHex,
-              chainName: "Arc Testnet",
-              nativeCurrency: {
-                name: "USDC",
-                symbol: "USDC",
-                decimals: 18,
-              },
-              rpcUrls: [
-                process.env.NEXT_PUBLIC_ARC_RPC_URL,
-              ],
-              blockExplorerUrls: [
+    } catch {
+      await ethereum.request({
+        method:
+          "wallet_addEthereumChain",
+
+        params: [
+          {
+            chainId:
+              ARC_CHAIN_ID_HEX,
+
+            chainName:
+              "Arc Testnet",
+
+            nativeCurrency: {
+              name: "USDC",
+              symbol: "USDC",
+              decimals: 6,
+            },
+
+            rpcUrls: [
+              "https://rpc.testnet.arc.network",
+            ],
+
+            blockExplorerUrls:
+              [
                 "https://testnet.arcscan.app",
               ],
-            },
-          ],
-        })
+          },
+        ],
+      })
 
-        await ethereum.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: chainIdHex }],
-        })
-      } else {
-        throw error
-      }
+      await ethereum.request({
+        method:
+          "wallet_switchEthereumChain",
+
+        params: [
+          {
+            chainId:
+              ARC_CHAIN_ID_HEX,
+          },
+        ],
+      })
+    } finally {
+      setNetworkPending(false)
     }
   }
 
   async function handleConnect() {
-    if (!injectedConnector) return
+    if (!injectedConnector)
+      return
 
     await connectAsync({
-      connector: injectedConnector,
+      connector:
+        injectedConnector,
     })
 
     await switchToArc()
@@ -113,27 +153,54 @@ export function Navbar() {
 
   useEffect(() => {
     async function loadBalance() {
-      if (!address || !publicClient) return
+      if (
+        !address ||
+        !publicClient
+      )
+        return
 
-      const rawBalance = await publicClient.getBalance({
-        address,
-      })
+      const rawBalance =
+        await publicClient.getBalance(
+          {
+            address,
+          }
+        )
 
-      setBalance(Number(formatUnits(rawBalance, 18)).toFixed(4))
+      setBalance(
+        Number(
+          formatUnits(
+            rawBalance,
+            6
+          )
+        ).toFixed(4)
+      )
     }
 
     loadBalance()
 
-    const interval = setInterval(loadBalance, 5000)
+    const interval =
+      setInterval(
+        loadBalance,
+        5000
+      )
 
-    return () => clearInterval(interval)
+    return () =>
+      clearInterval(interval)
   }, [address, publicClient])
 
   const adminWallet =
-    process.env.NEXT_PUBLIC_ADMIN_WALLET?.toLowerCase()
+    process.env
+      .NEXT_PUBLIC_ADMIN_WALLET?.toLowerCase()
 
   const isAdmin =
-    mounted && address?.toLowerCase() === adminWallet
+    mounted &&
+    address?.toLowerCase() ===
+      adminWallet
+
+  const isWrongNetwork =
+    mounted &&
+    isConnected &&
+    chainId !== ARC_CHAIN_ID
 
   return (
     <header className="fixed left-0 top-0 z-50 w-full border-b border-white/8 bg-black/80 backdrop-blur-xl">
@@ -155,6 +222,7 @@ export function Navbar() {
               className="group relative opacity-80 transition hover:opacity-100"
             >
               {link.label}
+
               <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-emerald-300 transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
@@ -166,6 +234,7 @@ export function Navbar() {
               className="group relative opacity-80 transition hover:opacity-100"
             >
               Admin
+
               <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-emerald-300 transition-all duration-300 group-hover:w-full" />
             </Link>
           ) : null}
@@ -174,12 +243,19 @@ export function Navbar() {
             <div className="h-10 w-32 rounded-2xl border border-zinc-800" />
           ) : isConnected ? (
             <>
-              {chainId !== arcTestnet.id ? (
+              {isWrongNetwork ? (
                 <button
-                  onClick={switchToArc}
-                  className="rounded-2xl border border-yellow-300/30 bg-yellow-300/10 px-4 py-2 text-sm text-yellow-300 transition hover:bg-yellow-300 hover:text-black"
+                  onClick={
+                    switchToArc
+                  }
+                  disabled={
+                    networkPending
+                  }
+                  className="rounded-2xl border border-yellow-300/30 bg-yellow-300/10 px-4 py-2 text-sm text-yellow-300 transition hover:bg-yellow-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Switch to Arc
+                  {networkPending
+                    ? "Switching..."
+                    : "Switch to Arc"}
                 </button>
               ) : null}
 
@@ -198,18 +274,31 @@ export function Navbar() {
 
               <div className="relative">
                 <button
-                  onClick={() => setOpen(!open)}
+                  onClick={() =>
+                    setOpen(!open)
+                  }
                   className="rounded-2xl border border-zinc-800 px-4 py-2 text-sm text-white transition hover:border-emerald-300/40"
                 >
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                  {address?.slice(
+                    0,
+                    6
+                  )}
+                  ...
+                  {address?.slice(-4)}
                 </button>
 
                 {open ? (
                   <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-2xl">
                     <div className="mb-3 rounded-xl bg-black p-3 text-xs text-zinc-500">
-                      <p className="mb-1">Connected wallet</p>
+                      <p className="mb-1">
+                        Connected
+                        wallet
+                      </p>
+
                       <p className="break-all text-zinc-300">
-                        {address}
+                        {
+                          address
+                        }
                       </p>
                     </div>
 
@@ -228,10 +317,17 @@ export function Navbar() {
             </>
           ) : (
             <button
-              onClick={handleConnect}
-              className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-zinc-200"
+              onClick={
+                handleConnect
+              }
+              disabled={
+                networkPending
+              }
+              className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Connect Wallet
+              {networkPending
+                ? "Connecting..."
+                : "Connect Wallet"}
             </button>
           )}
         </nav>
