@@ -217,7 +217,7 @@ export function TradeScenarioDialog({
         }
         className="w-full rounded-2xl bg-white px-5 py-4 font-medium text-black transition hover:opacity-90"
       >
-        Trade Scenario
+        Allocate Position
       </button>
 
       {open ? (
@@ -320,9 +320,9 @@ export function TradeScenarioDialog({
                 </span>
 
                 <span>
-                  Approve →
+                  Collateral →
                   Vault →
-                  ERC1155
+                  Position Mint
                 </span>
               </div>
 
@@ -442,10 +442,10 @@ export function TradeScenarioDialog({
                 : isConfirming
                   ? phase ===
                     "approve"
-                    ? "Approving..."
-                    : "Depositing..."
+                    ? "Authorizing Collateral..."
+                    : "Allocating Position..."
                   : canTrade
-                    ? "Approve & Deposit"
+                    ? "Confirm Allocation"
                     : "Connect wallet"}
             </button>
           </div>
