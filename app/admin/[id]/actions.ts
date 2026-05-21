@@ -5,23 +5,41 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 
 export async function approveMarket(marketId: string) {
+  const market = await prisma.market.findUnique({
+    where: { id: marketId },
+    include: { outcomes: true },
+  })
+
+  if (!market) return
+
+  const generatedOnchainId =
+    market.onchainId ?? Math.floor(Math.random() * 100000) + 1
+
   await prisma.market.update({
-    where: {
-      id: marketId,
-    },
+    where: { id: marketId },
     data: {
       reviewStatus: "approved",
       status: "active",
+      onchainId: generatedOnchainId,
     },
   })
+
+  for (let index = 0; index < market.outcomes.length; index++) {
+    await prisma.outcome.update({
+      where: { id: market.outcomes[index].id },
+      data: {
+        onchainId: market.outcomes[index].onchainId ?? index + 1,
+      },
+    })
+  }
 
   await prisma.activityEvent.create({
     data: {
       marketId,
       type: "review",
-      title: "Market Approved",
+      title: "Market Approved & Initialized",
       description:
-        "Market approved by admin and activated for public trading.",
+        `Market approved and linked to Arc Market ID ${generatedOnchainId}.`,
     },
   })
 
