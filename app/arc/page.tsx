@@ -4,7 +4,7 @@ const primitives = [
   {
     title: "Stablecoin-native execution",
     description:
-      "ArcSignal is designed around stablecoin-denominated participation, making prediction market UX more predictable for real-world users.",
+      "ArcSignal uses stablecoin-denominated settlement and collateral flows to create deterministic onchain market infrastructure.",
   },
   {
     title: "Multi-outcome scenario markets",
@@ -14,19 +14,19 @@ const primitives = [
   {
     title: "Deterministic settlement",
     description:
-      "Markets are resolved through explicit outcome selection and onchain settlement state, creating a clear audit trail.",
+      "Markets resolve through deterministic oracle-backed settlement and auditable onchain state transitions.",
   },
   {
     title: "Compliance-aware architecture",
     description:
-      "The system separates market creation, trading, portfolio exposure, and resolution workflows for future policy controls.",
+      "The system separates market creation, trading, resolution, and settlement layers for future policy extensibility.",
   },
 ]
 
 const steps = [
   "Create Market",
-  "Add Scenarios",
-  "Trade Onchain",
+  "Initialize Outcomes",
+  "Trade ERC1155 Position",
   "Resolve Outcome",
   "Audit Settlement",
 ]
@@ -40,7 +40,7 @@ export default function ArcAlignmentPage() {
         </p>
 
         <h1 className="max-w-4xl text-5xl font-semibold leading-tight tracking-tight">
-          Built for institutional-grade prediction markets on Arc.
+          Institutional prediction infrastructure for stablecoin-native markets.
         </h1>
 
         <p className="mt-6 max-w-3xl leading-8 text-zinc-300">
@@ -95,9 +95,9 @@ export default function ArcAlignmentPage() {
           <div className="space-y-4 text-zinc-300">
             <p>✅ Arc Testnet wallet connection</p>
             <p>✅ ScenarioMarket smart contract deployed on Arc Testnet</p>
-            <p>✅ Onchain market creation</p>
-            <p>✅ Onchain scenario trading</p>
-            <p>✅ Onchain market resolution</p>
+            <p>✅ ERC1155 conditional position minting</p>
+            <p>✅ Stablecoin vault settlement flow</p>
+            <p>✅ Oracle-assisted settlement flow</p>
             <p>✅ Prisma index/cache for fast institutional dashboard UX</p>
           </div>
         </GlowCard>
