@@ -25,6 +25,7 @@ type ClaimPosition = {
   payoutAmount: number
   shareAmount: number
   claimedAt?: string | null
+  claimTxHash?: string | null
 }
 
 type ClaimsClientProps = {
@@ -59,6 +60,7 @@ export function ClaimsClient({
     )
 
     const data = await response.json()
+
     setPositions(data.positions ?? [])
   }
 
@@ -218,7 +220,8 @@ export function ClaimsClient({
           onchainBalance === BigInt(0)
 
         const claimTx =
-          claimTxByMarket[position.marketId]
+          claimTxByMarket[position.marketId] ||
+          position.claimTxHash
 
         return (
           <div

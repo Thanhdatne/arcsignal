@@ -80,6 +80,8 @@ model Trade {
   txHash      String?
   claimedAt DateTime?
 
+  claimTxHash String?
+
   createdAt   DateTime @default(now())
 
   market      Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
