@@ -52,30 +52,48 @@ export function Navbar() {
 
   const injectedConnector = connectors[0]
 
-  async function switchToArc() {
+    async function switchToArc() {
+    const ethereum = window.ethereum
+
+    if (!ethereum) return
+
+    const chainIdHex = `0x${arcTestnet.id.toString(16)}`
+
     try {
-      await switchChainAsync({
-        chainId: arcTestnet.id,
-      })
-    } catch {
-      const ethereum = window.ethereum
-
-      if (!ethereum) return
-
       await ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: `0x${arcTestnet.id.toString(16)}`,
-            chainName: arcTestnet.name,
-            nativeCurrency: arcTestnet.nativeCurrency,
-            rpcUrls: arcTestnet.rpcUrls.default.http,
-            blockExplorerUrls: arcTestnet.blockExplorers?.default
-              ? [arcTestnet.blockExplorers.default.url]
-              : [],
-          },
-        ],
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: chainIdHex }],
       })
+    } catch (error: any) {
+      if (error?.code === 4902 || error?.message?.includes("Unrecognized")) {
+        await ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: chainIdHex,
+              chainName: "Arc Testnet",
+              nativeCurrency: {
+                name: "USDC",
+                symbol: "USDC",
+                decimals: 18,
+              },
+              rpcUrls: [
+                process.env.NEXT_PUBLIC_ARC_RPC_URL,
+              ],
+              blockExplorerUrls: [
+                "https://testnet.arcscan.app",
+              ],
+            },
+          ],
+        })
+
+        await ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: chainIdHex }],
+        })
+      } else {
+        throw error
+      }
     }
   }
 
