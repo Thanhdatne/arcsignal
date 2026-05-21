@@ -27,7 +27,7 @@ declare global {
 }
 
 const ARC_CHAIN_ID = 5042002
-const ARC_CHAIN_ID_HEX = "0x4cf4b2"
+const ARC_CHAIN_ID_HEX = "0x4cef52"
 const ARC_RPC_URL = "https://rpc.testnet.arc.network"
 const ARC_EXPLORER_URL = "https://testnet.arcscan.app"
 
