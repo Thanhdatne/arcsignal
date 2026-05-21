@@ -1,14 +1,18 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+
 import { prisma } from "@/lib/prisma"
 
 export async function addScenario(formData: FormData) {
   const marketId = formData.get("marketId") as string
   const label = formData.get("label") as string
+
   const onchainIdValue = formData.get("onchainId") as string | null
 
-  if (!marketId || !label) return
+  if (!marketId || !label) {
+    return
+  }
 
   const onchainId =
     onchainIdValue !== null && onchainIdValue !== ""
@@ -45,19 +49,31 @@ export async function recordTrade(formData: FormData) {
   const outcomeId = formData.get("outcomeId") as string
   const amount = Number(formData.get("amount"))
   const wallet = String(formData.get("wallet") || "").toLowerCase()
-  const txHash = formData.get("txHash") as string
+  const txHash = String(formData.get("txHash") || "")
 
-  if (!marketId || !outcomeId || !wallet || Number.isNaN(amount) || amount <= 0) {
+  if (
+    !marketId ||
+    !outcomeId ||
+    !wallet ||
+    Number.isNaN(amount) ||
+    amount <= 0
+  ) {
     return
   }
 
   const outcome = await prisma.outcome.findUnique({
-    where: { id: outcomeId },
+    where: {
+      id: outcomeId,
+    },
   })
 
-  if (!outcome) return
+  if (!outcome) {
+    return
+  }
 
-  const probability = outcome.probability <= 0 ? 1 : outcome.probability / 100
+  const probability =
+    outcome.probability <= 0 ? 1 : outcome.probability / 100
+
   const shares = amount / probability
 
   await prisma.trade.create({
@@ -74,15 +90,19 @@ export async function recordTrade(formData: FormData) {
   await prisma.activityEvent.create({
     data: {
       marketId,
-      type: "trade",
-      title: "Shares Minted",
-      description: `${shares.toFixed(2)} conditional shares minted`,
+      type: "allocation",
+      title: "Position Allocated",
+      description: `${shares.toFixed(
+        2
+      )} ERC1155 conditional position shares minted.`,
       txHash,
     },
   })
 
   await prisma.outcome.update({
-    where: { id: outcomeId },
+    where: {
+      id: outcomeId,
+    },
     data: {
       totalShares: outcome.totalShares + shares,
     },
@@ -92,7 +112,9 @@ export async function recordTrade(formData: FormData) {
 
   if (treasury) {
     await prisma.treasury.update({
-      where: { id: treasury.id },
+      where: {
+        id: treasury.id,
+      },
       data: {
         totalValueLocked: treasury.totalValueLocked + amount,
         reserveBalance: treasury.reserveBalance + amount,
@@ -121,7 +143,9 @@ export async function recordTrade(formData: FormData) {
 
 async function rebalanceMarketProbabilities(marketId: string) {
   const outcomes = await prisma.outcome.findMany({
-    where: { marketId },
+    where: {
+      marketId,
+    },
   })
 
   const totalShares = outcomes.reduce(
@@ -130,12 +154,17 @@ async function rebalanceMarketProbabilities(marketId: string) {
   )
 
   if (totalShares <= 0) {
-    const equalProbability = outcomes.length > 0 ? 100 / outcomes.length : 0
+    const equalProbability =
+      outcomes.length > 0 ? 100 / outcomes.length : 0
 
     for (const outcome of outcomes) {
       await prisma.outcome.update({
-        where: { id: outcome.id },
-        data: { probability: equalProbability },
+        where: {
+          id: outcome.id,
+        },
+        data: {
+          probability: equalProbability,
+        },
       })
     }
 
@@ -144,7 +173,9 @@ async function rebalanceMarketProbabilities(marketId: string) {
 
   for (const outcome of outcomes) {
     await prisma.outcome.update({
-      where: { id: outcome.id },
+      where: {
+        id: outcome.id,
+      },
       data: {
         probability: (outcome.totalShares / totalShares) * 100,
       },

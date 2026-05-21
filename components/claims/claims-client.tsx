@@ -15,6 +15,8 @@ import {
   settlementVaultConfig,
 } from "@/lib/contracts"
 
+const ARC_SCAN_TX_URL = "https://testnet.arcscan.app/tx"
+
 type ClaimPosition = {
   marketId: string
   marketTitle: string
@@ -40,6 +42,9 @@ export function ClaimsClient({
 
   const [claimingId, setClaimingId] =
     useState<string | null>(null)
+
+  const [claimTxByMarket, setClaimTxByMarket] =
+    useState<Record<string, string>>({})
 
   const { writeContractAsync } = useWriteContract()
 
@@ -85,7 +90,10 @@ export function ClaimsClient({
     },
   })
 
-  async function markClaimed(position: ClaimPosition) {
+  async function markClaimed(
+    position: ClaimPosition,
+    txHash?: string
+  ) {
     if (!address) return
 
     await fetch("/api/portfolio/claims", {
@@ -96,6 +104,7 @@ export function ClaimsClient({
       body: JSON.stringify({
         marketId: position.marketId,
         wallet: address,
+        txHash,
       }),
     })
   }
@@ -140,13 +149,28 @@ export function ClaimsClient({
         })
       }
 
-      await markClaimed(position)
+      setClaimTxByMarket((current) => ({
+        ...current,
+        [position.marketId]: hash,
+      }))
+
+      await markClaimed(position, hash)
 
       toast.dismiss(claimToast)
 
       toast.success("Claim completed", {
         description:
           "Vault burned shares and released USDC.",
+        action: {
+          label: "View Tx",
+          onClick: () => {
+            window.open(
+              `${ARC_SCAN_TX_URL}/${hash}`,
+              "_blank",
+              "noopener,noreferrer"
+            )
+          },
+        },
       })
 
       await loadClaims()
@@ -182,6 +206,7 @@ export function ClaimsClient({
     <div className="space-y-5">
       {positions.map((position, index) => {
         const balanceResult = balances?.[index]
+
         const onchainBalance =
           balanceResult?.status === "success"
             ? balanceResult.result
@@ -191,6 +216,9 @@ export function ClaimsClient({
           Boolean(position.claimedAt) ||
           position.payoutAmount <= 0 ||
           onchainBalance === BigInt(0)
+
+        const claimTx =
+          claimTxByMarket[position.marketId]
 
         return (
           <div
@@ -233,6 +261,17 @@ export function ClaimsClient({
                       ? "Already Claimed"
                       : `Payout ${position.payoutAmount.toFixed(2)} USDC`}
                   </div>
+
+                  {claimTx ? (
+                    <a
+                      href={`${ARC_SCAN_TX_URL}/${claimTx}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-emerald-300 transition hover:bg-emerald-300 hover:text-black"
+                    >
+                      View on ArcScan
+                    </a>
+                  ) : null}
                 </div>
               </div>
 
@@ -248,7 +287,7 @@ export function ClaimsClient({
                   ? "Already Claimed"
                   : claimingId === position.marketId
                     ? "Claiming..."
-                    : "Claim Rewards"}
+                    : "Claim Settlement"}
               </button>
             </div>
           </div>
